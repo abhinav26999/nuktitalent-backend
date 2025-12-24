@@ -3,7 +3,7 @@ node_modules
 dist
 
 # Env
-.env
+.env.development
 
 # Prisma
 .prisma/

@@ -1,13 +1,14 @@
 // Load dotenv first
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.development" });
 import path from 'path';
 
 dotenv.config({
     path: path.resolve(
         process.cwd(),
         process.env.NODE_ENV === "production"
-            ? ".env.production"
-            : ".env.development"
+            ? ".env.development.production"
+            : ".env.development.development"
     ),
 });
 
@@ -16,6 +17,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import {createServer} from "http";
+import enquiryRoutes from "./routes/enquiry.routes";
 // import { morganLogger } from "./middleware/morganLogger.middleware";
 // import { multerErrorHandler } from './middleware/multerErrorHandler';
 
@@ -35,8 +37,7 @@ const server = createServer(app);
 const PORT = process.env.PORT || 3002;
 
 // Routes
-// app.use('/api/auth', authRoutes);
-
+app.use("/api/enquiries", enquiryRoutes);
 
 // app.use(multerErrorHandler);
 
