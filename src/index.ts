@@ -20,6 +20,8 @@ import {createServer} from "http";
 import enquiryRoutes from "./routes/enquiry.routes";
 // import { morganLogger } from "./middleware/morganLogger.middleware";
 // import { multerErrorHandler } from './middleware/multerErrorHandler';
+import authRoutes from './routes/auth.routes'
+import jobRoutes from './routes/job.routes'
 
 
 
@@ -38,6 +40,8 @@ const PORT = process.env.PORT || 3002;
 
 // Routes
 app.use("/api/enquiries", enquiryRoutes);
+app.use("/api/auth",authRoutes)
+app.use("/api/job", jobRoutes)
 
 // app.use(multerErrorHandler);
 

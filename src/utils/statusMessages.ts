@@ -14,6 +14,16 @@ export const STATUS_MESSAGES = {
 } as const;
 
 export const APP_MESSAGES = {
+    USER_NOT_FOUND: 'User not found',
+    INVALID_EMAIL_PASSWORD: 'Invalid email or password',
+    USER_ALREADY_EXISTS: 'User with this email already exists',
+    REFRESH_TOKEN_INVALID: 'Refresh token is invalid or blacklisted',
+    VALIDATION_FAILED: 'Validation failed',
+    INVALID_EXPIRE_TOKEN: 'Invalid or expired token',
+    SHORT_URL_NOT_FOUND: 'Short URL not found or expired',
+    FORBIDDEN: 'Forbidden access',
+    TOKEN_REQUIRED: 'Authentication token is required',
+  
 
 } as const;
 
