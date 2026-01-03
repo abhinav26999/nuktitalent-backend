@@ -19,7 +19,6 @@ model Enquiry {
   updatedAt DateTime @updatedAt
 }
 
-
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
@@ -33,23 +32,23 @@ model User {
   jobs   Job[]   @relation("AdminJobs")
 }
 
-
 model Token {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   token       String
   type        TokenType
   expires     DateTime
   lastUsedAt  DateTime?
-  blacklisted Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  userId      String     @db.ObjectId
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blacklisted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  userId      String    @db.ObjectId
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
 }
+
 model Job {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   company     String
   location    String
@@ -57,21 +56,41 @@ model Job {
   salary      String
   description String
 
-  createdBy   String   @db.ObjectId
-  admin       User     @relation("AdminJobs", fields: [createdBy], references: [id])
+  createdBy String @db.ObjectId
+  admin     User   @relation("AdminJobs", fields: [createdBy], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  JobApplication JobApplication[]
 
   @@index([createdBy])
 }
-
-
 
 enum Role {
   ADMIN
 }
 
-enum TokenType{
+enum TokenType {
   REFRESH
+}
+
+model JobApplication {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  jobId String @db.ObjectId
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  fullName          String
+  email             String
+  mobile            String
+  alternateMobile   String?
+  preferredJobTitle String?
+  preferredLocation String?
+  expectedSalary    String?
+  totalExperience   String?
+  resumeUrl         String? // store uploaded file URL/path
+
+  createdAt DateTime @default(now())
+
+  @@index([jobId])
+  @@index([email])
 }

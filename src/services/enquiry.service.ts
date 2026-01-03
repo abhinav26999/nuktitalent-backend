@@ -1,5 +1,5 @@
 import prisma from "../db/db";
-import { IEnquiryRequest, IUpdateEnquiry } from "../interfaces/enquiry.interface";
+import { IEnquiryRequest, IUpdateEnquiry } from "../interfaces/Enquiry/enquiry.interface";
 import { Prisma } from "@prisma/client";
 
 export const createEnquiryService = (data: IEnquiryRequest) => {

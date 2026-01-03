@@ -1,12 +1,7 @@
 import dotenv from "dotenv";
 
-const NODE_ENV = process.env.NODE_ENV || "development";
 
-dotenv.config({
-    path: NODE_ENV === "production"
-        ? ".env.production"
-        : ".env.development"
-});
+dotenv.config({ path: ".env.development" });
 
 // imports AFTER dotenv
 import express from "express";
@@ -17,6 +12,7 @@ import { createServer } from "http";
 import enquiryRoutes from "./routes/enquiry.routes";
 import authRoutes from "./routes/auth.routes";
 import jobRoutes from "./routes/job.routes";
+import applyJobRoutes from "./routes/applyJob.routes";
 
 const app = express();
 // app.use(morganLogger);
@@ -32,12 +28,14 @@ app.use(cors({
 }));
 const server = createServer(app);
 
-const PORT = process.env.PORT || 3002;
+const PORT = Number(process.env.PORT) || 3000;
 
 // Routes
 app.use("/api/enquiries", enquiryRoutes);
 app.use("/api/auth",authRoutes)
 app.use("/api/job", jobRoutes)
+app.use("/api/job", applyJobRoutes);
+
 
 // app.use(multerErrorHandler);
 
