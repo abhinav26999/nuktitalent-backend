@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 
 export const generateAccessToken = (userId: string,role: Role ,email:string) => {
-    return jwt.sign({ userId,role,email }, process.env.JWT_SECRET!, { expiresIn: '15m' });
+    return jwt.sign({ userId,role,email }, process.env.JWT_SECRET!, { expiresIn: '30m' });
 };
 
 export const generateRefreshToken = (userId: string) => {

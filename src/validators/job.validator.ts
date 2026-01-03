@@ -23,8 +23,8 @@ export const updateJobParamSchema= Joi.object({
         .pattern(/^[0-9a-fA-F]{24}$/)
         .required()
         .messages({
-            "string.base": `"runMemberId" must be text`,
-            "string.pattern.base": `"runMemberId" must be a valid ObjectId`,
-            "any.required": `"runMemberId" is required`,
+            "string.base": `"jobId" must be text`,
+            "string.pattern.base": `"jobId" must be a valid ObjectId`,
+            "any.required": `"jobId" is required`,
         }),
 });

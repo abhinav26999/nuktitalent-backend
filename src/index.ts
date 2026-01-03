@@ -1,38 +1,34 @@
-// Load dotenv first
-import * as dotenv from "dotenv";
-dotenv.config({ path: ".env.development" });
-import path from 'path';
+import dotenv from "dotenv";
+
+const NODE_ENV = process.env.NODE_ENV || "development";
 
 dotenv.config({
-    path: path.resolve(
-        process.cwd(),
-        process.env.NODE_ENV === "production"
-            ? ".env.development.production"
-            : ".env.development.development"
-    ),
+    path: NODE_ENV === "production"
+        ? ".env.production"
+        : ".env.development"
 });
 
-// import everything else after dotenv
-import express from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import {createServer} from "http";
+// imports AFTER dotenv
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import { createServer } from "http";
+
 import enquiryRoutes from "./routes/enquiry.routes";
-// import { morganLogger } from "./middleware/morganLogger.middleware";
-// import { multerErrorHandler } from './middleware/multerErrorHandler';
-import authRoutes from './routes/auth.routes'
-import jobRoutes from './routes/job.routes'
-
-
+import authRoutes from "./routes/auth.routes";
+import jobRoutes from "./routes/job.routes";
 
 const app = express();
 // app.use(morganLogger);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin:'http://localhost:5173',
-    methods: ["GET", "POST", "PUT","PATCH", "DELETE"],
-    credentials: true
+    origin: [
+        "http://localhost:5173",
+        "https://lucent-brigadeiros-76b38c.netlify.app"
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
 }));
 const server = createServer(app);
 
