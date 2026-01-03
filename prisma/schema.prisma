@@ -87,7 +87,7 @@ model JobApplication {
   preferredLocation String?
   expectedSalary    String?
   totalExperience   String?
-  resumeUrl         String? // store uploaded file URL/path
+  resumeUrl         String?
 
   createdAt DateTime @default(now())
 
