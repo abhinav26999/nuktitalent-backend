@@ -25,7 +25,7 @@ app.use(cookieParser());
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://lucent-brigadeiros-76b38c.netlify.app"
+        "https://comfy-begonia-b5f6d3.netlify.app"
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
