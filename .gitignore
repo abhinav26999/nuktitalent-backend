@@ -4,6 +4,8 @@ dist
 
 # Env
 .env.development
+.env.production
+
 
 # Prisma
 .prisma/
