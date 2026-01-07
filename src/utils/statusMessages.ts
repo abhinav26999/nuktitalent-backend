@@ -23,6 +23,10 @@ export const APP_MESSAGES = {
     SHORT_URL_NOT_FOUND: 'Short URL not found or expired',
     FORBIDDEN: 'Forbidden access',
     TOKEN_REQUIRED: 'Authentication token is required',
+    LOGGED_OUT_SUCCESSFULLY:"Log out successfully",
+    OTP_SENT:"Otp send successfully",
+    INVALID_OR_EXPIRED_OTP:"Invalid or expired otp",
+    PASSWORD_RESET_SUCCESSFULLY:"Password reset successfully"
   
 
 } as const;

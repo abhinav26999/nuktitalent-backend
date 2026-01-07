@@ -30,6 +30,7 @@ model User {
 
   tokens Token[]
   jobs   Job[]   @relation("AdminJobs")
+  otpCodes        OTPCode[]
 }
 
 model Token {
@@ -94,3 +95,17 @@ model JobApplication {
   @@index([jobId])
   @@index([email])
 }
+
+model OTPCode {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  code      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+

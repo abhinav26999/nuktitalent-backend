@@ -39,3 +39,32 @@ export const loginSchema = Joi.object({
     }),
 });
 
+
+
+// Forgot password validation
+export const forgotPasswordSchema = Joi.object({
+    email: Joi.string().email().required().messages({
+        'string.base': `"email" should be a type of 'text'`,
+        'string.email': `"email" must be a valid email`,
+        'any.required': `"email" is a required field`,
+    }),
+});
+
+// Reset password validation
+export const resetPasswordSchema = Joi.object({
+    email: Joi.string().email().required().messages({
+        'string.base': `"email" should be a type of 'text'`,
+        'string.email': `"email" must be a valid email`,
+        'any.required': `"email" is a required field`,
+    }),
+    otp: Joi.string().length(6).required().messages({
+        'string.base': `"otp" should be a type of 'text'`,
+        'string.length': `"otp" must be 6 characters`,
+        'any.required': `"otp" is a required field`,
+    }),
+    newPassword: Joi.string().min(6).required().messages({
+        'string.base': `"newPassword" should be a type of 'text'`,
+        'string.min': `"newPassword" should have a minimum length of {#limit}`,
+        'any.required': `"newPassword" is a required field`,
+    }),
+});

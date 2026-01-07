@@ -7,8 +7,9 @@ import {AppError} from "../utils/appError";
 ;
 import {RegisterRequestBody} from "../interfaces/auth/register.interface";
 import { LoginRequestBody } from '../interfaces/auth/login.interface';
-import { loginSchema, registerSchema } from '../validators/auth.validator';
-import { loginUserService, registerUserService } from '../services/auth.service';
+import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from '../validators/auth.validator';
+import { forgotPasswordService, handleRefreshTokenService, loginUserService, logoutService, registerUserService, resetPasswordService } from '../services/auth.service';
+import { RefreshTokenRequestBody } from '../interfaces/auth/refresh-token.interface';
 
 
 
@@ -79,8 +80,108 @@ export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (req, 
     }
 };
 
+export const refreshAccessToken: RequestHandler<{}, any, RefreshTokenRequestBody> = async (req, res) => {
+    const refreshToken = req.cookies?.refreshToken;
+    try {
+       
+
+        const { newAccessToken, newRefreshToken } = await handleRefreshTokenService(
+            refreshToken!,   
+        );
+
+        res.cookie('refreshToken', newRefreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/auth/refresh',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, { accessToken: newAccessToken });
+    } catch (err: any) {
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
+    }
+};
+
+export const logoutUser: RequestHandler = async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+
+    const result = await logoutService(userId);
+
+    // Clear refresh token cookie
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
+  } catch (err: any) {
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
+    }
+};
+
+export const forgotPassword: RequestHandler = async (req, res) => {
+  const { error, value } = forgotPasswordSchema.validate(req.body, {
+    abortEarly: false,
+  });
+
+  if (error) {
+    return sendError(
+      res,
+      STATUS_CODES.BAD_REQUEST,
+      error.message,
+      STATUS_MESSAGES.BAD_REQUEST
+    );
+  }
+
+  try {
+    const result = await forgotPasswordService(value.email);
+    sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
+  } catch (err: any) {
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
+    }
+};
 
 
+export const resetPassword: RequestHandler = async (req, res) => {
+  const { error, value } = resetPasswordSchema.validate(req.body, {
+    abortEarly: false,
+  });
 
+  if (error) {
+    return sendError(
+      res,
+      STATUS_CODES.BAD_REQUEST,
+      error.message,
+      STATUS_MESSAGES.BAD_REQUEST
+    );
+  }
 
+  try {
+    const result = await resetPasswordService(
+      value.email,
+      value.otp,
+      value.newPassword
+    );
+
+    sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
+  } catch (err: any) {
+        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        const message = err.message || 'Something went wrong';
+        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
+        sendError(res, status, message, errorText);
+    }
+};
 
