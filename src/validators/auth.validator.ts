@@ -57,11 +57,15 @@ export const resetPasswordSchema = Joi.object({
         'string.email': `"email" must be a valid email`,
         'any.required': `"email" is a required field`,
     }),
-    otp: Joi.string().length(6).required().messages({
-        'string.base': `"otp" should be a type of 'text'`,
-        'string.length': `"otp" must be 6 characters`,
-        'any.required': `"otp" is a required field`,
-    }),
+    otp: Joi.string()
+        .trim()
+        .pattern(/^[0-9]{6}$/)
+        .required()
+        .messages({
+            'string.pattern.base': `"otp" must be a 6 digit number`,
+            'any.required': `"otp" is a required field`,
+        }),
+
     newPassword: Joi.string().min(6).required().messages({
         'string.base': `"newPassword" should be a type of 'text'`,
         'string.min': `"newPassword" should have a minimum length of {#limit}`,
