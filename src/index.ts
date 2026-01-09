@@ -1,7 +1,11 @@
 import dotenv from "dotenv";
 
 
-dotenv.config({ path: ".env.development" });
+dotenv.config({
+    path: process.env.NODE_ENV === "production"
+        ? ".env.production"
+        : ".env.development"
+});
 
 // imports AFTER dotenv
 import express from "express";

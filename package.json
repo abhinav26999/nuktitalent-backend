@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
+    "dev": "NODE_ENV=development nodemon --watch src --exec ts-node src/index.ts",
+    "start": "NODE_ENV=production node dist/index.js",
     "build": "prisma generate && tsc",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
     "prisma:dev": "prisma generate --schema=prisma/schema.prisma",
     "db:dev": "dotenv -e .env.development -- prisma db push",
     "db:prod": "dotenv -e .env.production -- prisma db push"

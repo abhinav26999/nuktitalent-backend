@@ -131,86 +131,139 @@ export const handleRefreshTokenService = async (
 
 /* ================= FORGOT PASSWORD ================= */
 export const forgotPasswordService = async (email: string) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+    console.log('🔵 FORGOT PASSWORD START', { email });
 
-  if (!user) {
-    throw new AppError(APP_MESSAGES.USER_NOT_FOUND, STATUS_CODES.NOT_FOUND);
-  }
+    // 1️⃣ Find user
+    const user = await prisma.user.findUnique({
+        where: { email },
+    });
 
-  // Invalidate previous OTPs
-  await prisma.oTPCode.updateMany({
-    where: {
-      userId: user.id,
-      usedAt: null,
-    },
-    data: {
-      usedAt: new Date(),
-    },
-  });
+    console.log('🟢 USER FOUND:', user?.id);
 
-  const otp = generateOtpCode();
-  const expiresAt = calculateExpiry(10);
+    if (!user) {
+        console.log('🔴 USER NOT FOUND');
+        throw new AppError(APP_MESSAGES.USER_NOT_FOUND, STATUS_CODES.NOT_FOUND);
+    }
 
-  await prisma.oTPCode.create({
-    data: {
-      code: otp,
-      userId: user.id,
-      expiresAt,
-    },
-  });
+    const invalidated = await prisma.oTPCode.updateMany({
+        where: {
+            userId: user.id,
+            OR: [
+                { usedAt: { equals: null } },
+                { usedAt: { isSet: false } },
+            ],
+        },
+        data: {
+            usedAt: new Date(),
+        },
+    });
 
-  await sendOtpEmail(email, otp, OtpPurpose.FORGOT_PASSWORD);
 
-  return {
-    message: APP_MESSAGES.OTP_SENT,
-  };
+    console.log('🧹 OLD OTPs INVALIDATED:', invalidated.count);
+
+    // 3️⃣ Generate new OTP
+    const otp = generateOtpCode();
+    const expiresAt = calculateExpiry(10); // 10 minutes
+
+    // 4️⃣ Save OTP
+    const createdOtp = await prisma.oTPCode.create({
+        data: {
+            code: otp,
+            userId: user.id,
+            expiresAt,
+        },
+    });
+
+    console.log('🟢 OTP CREATED:', {
+        id: createdOtp.id,
+        code: createdOtp.code,
+        expiresAt: createdOtp.expiresAt,
+    });
+
+    console.log('⏰ NOW:', new Date().toISOString());
+    console.log('⏰ EXPIRES AT:', expiresAt.toISOString());
+
+    // 5️⃣ Send email
+    await sendOtpEmail(email, otp, OtpPurpose.FORGOT_PASSWORD);
+
+    console.log('📧 OTP EMAIL SENT');
+
+    return { message: APP_MESSAGES.OTP_SENT };
 };
 
 /* ================= RESET PASSWORD ================= */
 export const resetPasswordService = async (
-  email: string,
-  otp: string,
-  newPassword: string
+    email: string,
+    otp: string,
+    newPassword: string
 ) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+    console.log('🔵 RESET PASSWORD START');
+    console.log('📩 EMAIL:', email);
+    console.log('🔢 RAW OTP:', JSON.stringify(otp));
 
-  if (!user) {
-    throw new AppError(APP_MESSAGES.USER_NOT_FOUND, STATUS_CODES.NOT_FOUND);
-  }
+    const cleanOtp = otp.trim(); // ✅ STRING ONLY
+    console.log('🔢 CLEAN OTP:', JSON.stringify(cleanOtp));
 
-  const otpEntry = await prisma.oTPCode.findFirst({
-    where: {
-      userId: user.id,
-      code: otp,
-      usedAt: null,
-      expiresAt: { gt: new Date() },
-    },
-  });
+    const user = await prisma.user.findUnique({ where: { email } });
+    console.log('🟢 USER FOUND:', user?.id);
 
-  if (!otpEntry) {
-    throw new AppError(
-      APP_MESSAGES.INVALID_OR_EXPIRED_OTP,
-      STATUS_CODES.BAD_REQUEST
-    );
-  }
+    if (!user) {
+        throw new AppError(APP_MESSAGES.USER_NOT_FOUND, STATUS_CODES.NOT_FOUND);
+    }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const allOtps = await prisma.oTPCode.findMany({
+        where: { userId: user.id },
+    });
+    console.log('🟡 ALL OTPs FOR USER:', allOtps);
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedPassword },
-    }),
-    prisma.oTPCode.update({
-      where: { id: otpEntry.id },
-      data: { usedAt: new Date() },
-    }),
-  ]);
+    console.log('⏰ NOW:', new Date());
 
-  return {
-    message: APP_MESSAGES.PASSWORD_RESET_SUCCESSFULLY,
-  };
+    const otpEntry = await prisma.oTPCode.findFirst({
+        where: {
+            userId: user.id,
+            code: cleanOtp,
+            expiresAt: { gt: new Date() },
+            OR: [
+                { usedAt: { equals: null } },        // explicit null
+                { usedAt: { isSet: false } },        // 🔥 missing field
+            ],
+        },
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+
+
+    console.log('🟢 MATCHED OTP ENTRY:', otpEntry);
+
+    if (!otpEntry) {
+        console.log('🔴 OTP NOT MATCHED');
+        throw new AppError(
+            APP_MESSAGES.INVALID_OR_EXPIRED_OTP,
+            STATUS_CODES.BAD_REQUEST
+        );
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+        }),
+        prisma.oTPCode.update({
+            where: { id: otpEntry.id },
+            data: { usedAt: new Date() },
+        }),
+    ]);
+
+    console.log('✅ PASSWORD RESET SUCCESS');
+
+    return { message: APP_MESSAGES.PASSWORD_RESET_SUCCESSFULLY };
 };
+
+
+
 
 export const logoutService = async (userId: string) => {
   const result = await prisma.token.updateMany({
