@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import * as nodemailer from "nodemailer";
 
 /** OTP purpose */
 export enum OtpPurpose {
