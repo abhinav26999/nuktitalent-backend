@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/abhinav26999/nuktitalent-backend#readme",
   "dependencies": {
+    "@types/nodemailer": "^7.0.5",
     "@prisma/client": "^6.8.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -45,7 +46,6 @@
     "prisma": "^6.8.2"
   },
   "devDependencies": {
-    "@types/nodemailer": "^7.0.5",
     "cross-env": "^10.1.0",
     "dotenv-cli": "^11.0.0",
     "nodemon": "^3.1.11",
