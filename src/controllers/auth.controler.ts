@@ -1,187 +1,260 @@
+import { RequestHandler } from "express";
+import { sendError, sendSuccess } from "../utils/response";
+import { STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES } from "../utils/statusMessages";
+import { STATUS_CODES } from "../utils/statusCodes";
+import { AppError } from "../utils/appError";
 
-import {RequestHandler} from 'express';
-import {sendError, sendSuccess} from '../utils/response';
-import { STATUS_MESSAGE_BY_CODE, STATUS_MESSAGES} from "../utils/statusMessages";
-import {STATUS_CODES} from "../utils/statusCodes";
-import {AppError} from "../utils/appError";
-;
-import {RegisterRequestBody} from "../interfaces/auth/register.interface";
-import { LoginRequestBody } from '../interfaces/auth/login.interface';
-import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from '../validators/auth.validator';
-import { forgotPasswordService, handleRefreshTokenService, loginUserService, logoutService, registerUserService, resetPasswordService } from '../services/auth.service';
-import { RefreshTokenRequestBody } from '../interfaces/auth/refresh-token.interface';
+import { RegisterRequestBody } from "../interfaces/auth/register.interface";
+import { LoginRequestBody } from "../interfaces/auth/login.interface";
+import { RefreshTokenRequestBody } from "../interfaces/auth/refresh-token.interface";
 
+import {
+    forgotPasswordSchema,
+    loginSchema,
+    registerSchema,
+    resetPasswordSchema,
+} from "../validators/auth.validator";
 
+import {
+    forgotPasswordService,
+    handleRefreshTokenService,
+    loginUserService,
+    logoutService,
+    registerUserService,
+    resetPasswordService,
+} from "../services/auth.service";
 
-export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async (req, res) => {
-    const { error, value } = registerSchema.validate(req.body || {}, { abortEarly: false });
+/* ================= REGISTER ================= */
+export const registerUser: RequestHandler<{}, any, RegisterRequestBody> = async (
+    req,
+    res
+) => {
+    const { error, value } = registerSchema.validate(req.body, {
+        abortEarly: false,
+    });
     if (error) {
-        sendError(res, STATUS_CODES.BAD_REQUEST, error.message, STATUS_MESSAGES.BAD_REQUEST);
-        return;
+        return sendError(
+            res,
+            STATUS_CODES.BAD_REQUEST,
+            error.message,
+            STATUS_MESSAGES.BAD_REQUEST
+        );
     }
 
-    const { name , email, password, role } = value;
-
     try {
+        const { user, accessToken, refreshToken } =
+            await registerUserService(
+                value.name,
+                value.email,
+                value.password,
+                value.role
+            );
 
-        const { user, accessToken, refreshToken } = await registerUserService(name, email, password,  role);
-        res.cookie('refreshToken', refreshToken, {
+        res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/',
+            secure: true,
+            sameSite: "none",
+            path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        sendSuccess(
-            res,
-            STATUS_CODES.CREATED,
-            STATUS_MESSAGES.CREATED,
-            { user, accessToken }
-        );
+        sendSuccess(res, STATUS_CODES.CREATED, STATUS_MESSAGES.CREATED, {
+            user,
+            accessToken,
+        });
     } catch (err: any) {
-        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
-        const message = err.message || 'Something went wrong';
-        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
-        sendError(res, status, message, errorText);
+        const status =
+            err instanceof AppError
+                ? err.statusCode
+                : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        sendError(
+            res,
+            status,
+            err.message || "Something went wrong",
+            STATUS_MESSAGE_BY_CODE[status]
+        );
     }
 };
 
-
-export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (req, res) => {
-    const { error, value } = loginSchema.validate(req.body || {}, { abortEarly: false });
+/* ================= LOGIN ================= */
+export const loginUser: RequestHandler<{}, any, LoginRequestBody> = async (
+    req,
+    res
+) => {
+    const { error, value } = loginSchema.validate(req.body, {
+        abortEarly: false,
+    });
     if (error) {
-        sendError(res, STATUS_CODES.BAD_REQUEST, error.message, STATUS_MESSAGES.BAD_REQUEST);
-        return;
-    }
-
-    try {
-        const { user, accessToken, refreshToken } = await loginUserService(value);
-
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
-
-        sendSuccess(
+        return sendError(
             res,
-            STATUS_CODES.OK,
-            STATUS_MESSAGES.OK,
-            { user, accessToken }
+            STATUS_CODES.BAD_REQUEST,
+            error.message,
+            STATUS_MESSAGES.BAD_REQUEST
         );
-    } catch (err: any) {
-        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
-        const message = err.message || 'Something went wrong';
-        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
-        sendError(res, status, message, errorText);
     }
-};
 
-export const refreshAccessToken: RequestHandler<{}, any, RefreshTokenRequestBody> = async (req, res) => {
-    const refreshToken = req.cookies?.refreshToken;
     try {
-       
+        const { user, accessToken, refreshToken } =
+            await loginUserService(value);
 
-        const { newAccessToken, newRefreshToken } = await handleRefreshTokenService(
-            refreshToken!,   
-        );
-
-        res.cookie('refreshToken', newRefreshToken, {
+        res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/auth/refresh',
+            secure: true,
+            sameSite: "none",
+            path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, { accessToken: newAccessToken });
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, {
+            user,
+            accessToken,
+        });
     } catch (err: any) {
-        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
-        const message = err.message || 'Something went wrong';
-        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
-        sendError(res, status, message, errorText);
+        const status =
+            err instanceof AppError
+                ? err.statusCode
+                : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        sendError(
+            res,
+            status,
+            err.message || "Something went wrong",
+            STATUS_MESSAGE_BY_CODE[status]
+        );
     }
 };
 
+/* ================= REFRESH TOKEN ================= */
+export const refreshAccessToken: RequestHandler<
+    {},
+    any,
+    RefreshTokenRequestBody
+> = async (req, res) => {
+    try {
+        const refreshToken = req.cookies?.refreshToken;
+        if (!refreshToken) {
+            throw new AppError("Refresh token missing", STATUS_CODES.UNAUTHORIZED);
+        }
+
+        const { newAccessToken, newRefreshToken } =
+            await handleRefreshTokenService(refreshToken);
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, {
+            access: { token: newAccessToken },
+        });
+    } catch (err: any) {
+        const status =
+            err instanceof AppError
+                ? err.statusCode
+                : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        sendError(
+            res,
+            status,
+            err.message || "Something went wrong",
+            STATUS_MESSAGE_BY_CODE[status]
+        );
+    }
+};
+
+/* ================= LOGOUT ================= */
 export const logoutUser: RequestHandler = async (req, res) => {
-  try {
-    const userId = (req as any).user.userId;
+    try {
+        const userId = (req as any).user.userId;
+        const result = await logoutService(userId);
 
-    const result = await logoutService(userId);
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+            path: "/",
+        });
 
-    // Clear refresh token cookie
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
+    } catch (err: any) {
+        const status =
+            err instanceof AppError
+                ? err.statusCode
+                : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        sendError(
+            res,
+            status,
+            err.message || "Something went wrong",
+            STATUS_MESSAGE_BY_CODE[status]
+        );
+    }
+};
+
+/* ================= FORGOT PASSWORD ================= */
+export const forgotPassword: RequestHandler = async (req, res) => {
+    const { error, value } = forgotPasswordSchema.validate(req.body, {
+        abortEarly: false,
     });
 
-    sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
-  } catch (err: any) {
-        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
-        const message = err.message || 'Something went wrong';
-        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
-        sendError(res, status, message, errorText);
+    if (error) {
+        return sendError(
+            res,
+            STATUS_CODES.BAD_REQUEST,
+            error.message,
+            STATUS_MESSAGES.BAD_REQUEST
+        );
+    }
+
+    try {
+        const result = await forgotPasswordService(value.email);
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
+    } catch (err: any) {
+        const status =
+            err instanceof AppError
+                ? err.statusCode
+                : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        sendError(
+            res,
+            status,
+            err.message || "Something went wrong",
+            STATUS_MESSAGE_BY_CODE[status]
+        );
     }
 };
 
-export const forgotPassword: RequestHandler = async (req, res) => {
-  const { error, value } = forgotPasswordSchema.validate(req.body, {
-    abortEarly: false,
-  });
-
-  if (error) {
-    return sendError(
-      res,
-      STATUS_CODES.BAD_REQUEST,
-      error.message,
-      STATUS_MESSAGES.BAD_REQUEST
-    );
-  }
-
-  try {
-    const result = await forgotPasswordService(value.email);
-    sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
-  } catch (err: any) {
-        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
-        const message = err.message || 'Something went wrong';
-        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
-        sendError(res, status, message, errorText);
-    }
-};
-
-
+/* ================= RESET PASSWORD ================= */
 export const resetPassword: RequestHandler = async (req, res) => {
-  const { error, value } = resetPasswordSchema.validate(req.body, {
-    abortEarly: false,
-  });
+    const { error, value } = resetPasswordSchema.validate(req.body, {
+        abortEarly: false,
+    });
 
-  if (error) {
-    return sendError(
-      res,
-      STATUS_CODES.BAD_REQUEST,
-      error.message,
-      STATUS_MESSAGES.BAD_REQUEST
-    );
-  }
+    if (error) {
+        return sendError(
+            res,
+            STATUS_CODES.BAD_REQUEST,
+            error.message,
+            STATUS_MESSAGES.BAD_REQUEST
+        );
+    }
 
-  try {
-    const result = await resetPasswordService(
-      value.email,
-      value.otp,
-      value.newPassword
-    );
-
-    sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
-  } catch (err: any) {
-        const status = err instanceof AppError ? err.statusCode : STATUS_CODES.INTERNAL_SERVER_ERROR;
-        const message = err.message || 'Something went wrong';
-        const errorText = STATUS_MESSAGE_BY_CODE[status] || 'Error';
-        sendError(res, status, message, errorText);
+    try {
+        const result = await resetPasswordService(
+            value.email,
+            value.otp,
+            value.newPassword
+        );
+        sendSuccess(res, STATUS_CODES.OK, STATUS_MESSAGES.OK, result);
+    } catch (err: any) {
+        const status =
+            err instanceof AppError
+                ? err.statusCode
+                : STATUS_CODES.INTERNAL_SERVER_ERROR;
+        sendError(
+            res,
+            status,
+            err.message || "Something went wrong",
+            STATUS_MESSAGE_BY_CODE[status]
+        );
     }
 };
-

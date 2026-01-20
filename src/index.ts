@@ -1,59 +1,82 @@
 import dotenv from "dotenv";
 
-
+/**
+ * Load correct env file
+ */
 dotenv.config({
     path: process.env.NODE_ENV === "production"
         ? ".env.production"
-        : ".env.development"
+        : ".env.development",
 });
 
-// imports AFTER dotenv
+// ================== IMPORTS ==================
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 
-import enquiryRoutes from "./routes/enquiry.routes";
-import authRoutes from "./routes/auth.routes";
-import jobRoutes from "./routes/job.routes";
-import applyJobRoutes from "./routes/applyJob.routes";
+// Routes
+import enquiryRoutes from "./routes/enquiry.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import jobRoutes from "./routes/job.routes.js";
+import applyJobRoutes from "./routes/applyJob.routes.js";
 
+// ================== APP INIT ==================
 const app = express();
-// app.use(morganLogger);
-app.use(express.json());
-app.use(cookieParser());
-app.use(cors({
-    origin: [
-        "http://localhost:5173",
-        "https://comfy-begonia-b5f6d3.netlify.app"
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
-}));
 const server = createServer(app);
 
-const PORT = Number(process.env.PORT) || 3000;
+// ================== MIDDLEWARES ==================
+app.use(express.json());
+app.use(cookieParser());
 
-// Routes
+// ---- CORS CONFIG (PRODUCTION READY) ----
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://niyuktitalent.in",
+    "https://www.niyuktitalent.in",
+    "https://comfy-begonia-b5f6d3.netlify.app",
+];
+
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            // allow server-to-server & Postman
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("CORS not allowed for this origin"));
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    })
+);
+
+// ---- PRE-FLIGHT (VERY IMPORTANT) ----
+app.options("*", cors());
+
+// ================== ROUTES ==================
 app.use("/api/enquiries", enquiryRoutes);
-app.use("/api/auth",authRoutes)
-app.use("/api/job", jobRoutes)
+app.use("/api/auth", authRoutes);
+app.use("/api/job", jobRoutes);
 app.use("/api/job", applyJobRoutes);
 
+// ================== SERVER ==================
+const PORT = Number(process.env.PORT) || 3000;
 
-// app.use(multerErrorHandler);
-
-
-
-// CORRECT: Listen on HTTP server (not Express app)
 server.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT} in ${process.env.NODE_ENV} mode`);
+    console.log(
+        `🚀 Server running on port ${PORT} | ENV: ${process.env.NODE_ENV}`
+    );
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM signal received: closing HTTP server');
+// ================== GRACEFUL SHUTDOWN ==================
+process.on("SIGTERM", () => {
+    console.log("SIGTERM received. Closing server...");
     server.close(() => {
-        console.log('HTTP server closed');
+        console.log("HTTP server closed.");
     });
 });
