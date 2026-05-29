@@ -16,10 +16,10 @@ import cookieParser from "cookie-parser";
 import { createServer } from "http";
 
 // Routes
-import enquiryRoutes from "./routes/enquiry.routes.js";
-import authRoutes from "./routes/auth.routes.js";
-import jobRoutes from "./routes/job.routes.js";
-import applyJobRoutes from "./routes/applyJob.routes.js";
+import enquiryRoutes from "./routes/enquiry.routes";
+import authRoutes from "./routes/auth.routes";
+import jobRoutes from "./routes/job.routes";
+import applyJobRoutes from "./routes/applyJob.routes";
 
 // ================== APP INIT ==================
 const app = express();
