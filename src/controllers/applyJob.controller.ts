@@ -68,13 +68,16 @@ export const getApplicationResume: RequestHandler<{ id: string }> = async (req, 
         if (!application || !application.resumePublicId)
             return sendError(res, 404, "Resume not found", "Error");
 
+        // Extract format from filename (default to "pdf")
+        const format = application.resumeFilename?.split('.').pop() || "pdf";
+
         const downloadUrl = cloudinary.utils.private_download_url(
             application.resumePublicId,
-            "", // auto-detect
+            format,
             {
-                resource_type: "raw", // ✅ THIS WAS MISSING
+                resource_type: "raw",
                 expires_at: Math.floor(Date.now() / 1000) + 300, // 5 min
-                attachment: true, // force download
+                attachment: false, // Allow inline viewing in the browser
             }
         );
 
